@@ -54,6 +54,7 @@ struct game_t {
   placed_tile_t *origin; // TODO: set this up correctly (see tests)
 };
 
+// TODO: convert this to use function pointers
 #define find_most(dir, comp) \
   placed_tile_t *find_most_##dir(placed_tile_t *origin) {\
     if (origin == NULL) return NULL;\
