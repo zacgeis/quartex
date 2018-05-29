@@ -9,6 +9,7 @@
 #define corner_count 4
 #define config_count 8
 #define hand_limit 5
+#define player_limit 5
 
 typedef enum bool bool;
 enum bool { false, true };
@@ -48,8 +49,8 @@ struct game_t {
   int tiles_remaining;
   tile_t **tile_bag;
   int player_count;
-  int hand_count[5];
-  tile_t hands[5][5];
+  int hand_count[hand_limit];
+  tile_t hands[player_limit][hand_limit];
   placed_tile_t *origin; // TODO: set this up correctly (see tests)
 };
 
