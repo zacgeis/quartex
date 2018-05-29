@@ -54,105 +54,29 @@ struct game_t {
   placed_tile_t *origin; // TODO: set this up correctly (see tests)
 };
 
-placed_tile_t *find_most_north(placed_tile_t *origin) {
-  if (origin == NULL) return NULL;
-  if (origin->visited) return NULL;
+#define find_most(dir, comp) \
+  placed_tile_t *find_most_##dir(placed_tile_t *origin) {\
+    if (origin == NULL) return NULL;\
+    if (origin->visited) return NULL;\
+    origin->visited = true;\
+    placed_tile_t *most = origin;\
+    placed_tile_t *result = NULL;\
+    result = find_most_##dir(origin->n);\
+    if (result != NULL && comp) most = result;\
+    result = find_most_##dir(origin->e);\
+    if (result != NULL && comp) most = result;\
+    result = find_most_##dir(origin->s);\
+    if (result != NULL && comp) most = result;\
+    result = find_most_##dir(origin->w);\
+    if (result != NULL && comp) most = result;\
+    origin->visited = false;\
+    return most;\
+  }
 
-  origin->visited = true;
-
-  placed_tile_t *most = origin;
-  placed_tile_t *result = NULL;
-
-  result = find_most_north(origin->n);
-  if (result != NULL && result->y > most->y) most = result;
-
-  result = find_most_north(origin->e);
-  if (result != NULL && result->y > most->y) most = result;
-
-  result = find_most_north(origin->s);
-  if (result != NULL && result->y > most->y) most = result;
-
-  result = find_most_north(origin->w);
-  if (result != NULL && result->y > most->y) most = result;
-
-  origin->visited = false;
-  return most;
-}
-
-placed_tile_t *find_most_south(placed_tile_t *origin) {
-  if (origin == NULL) return NULL;
-  if (origin->visited) return NULL;
-
-  origin->visited = true;
-
-  placed_tile_t *most = origin;
-  placed_tile_t *result = NULL;
-
-  result = find_most_south(origin->n);
-  if (result != NULL && result->y < most->y) most = result;
-
-  result = find_most_south(origin->e);
-  if (result != NULL && result->y < most->y) most = result;
-
-  result = find_most_south(origin->s);
-  if (result != NULL && result->y < most->y) most = result;
-
-  result = find_most_south(origin->w);
-  if (result != NULL && result->y < most->y) most = result;
-
-  origin->visited = false;
-  return most;
-}
-
-placed_tile_t *find_most_east(placed_tile_t *origin) {
-  if (origin == NULL) return NULL;
-  if (origin->visited) return NULL;
-
-  origin->visited = true;
-
-  placed_tile_t *most = origin;
-  placed_tile_t *result = NULL;
-
-  result = find_most_east(origin->n);
-  if (result != NULL && result->x > most->x) most = result;
-
-  result = find_most_east(origin->e);
-  if (result != NULL && result->x > most->x) most = result;
-
-  result = find_most_east(origin->s);
-  if (result != NULL && result->x > most->x) most = result;
-
-  result = find_most_east(origin->w);
-  if (result != NULL && result->x > most->x) most = result;
-
-  origin->visited = false;
-  return most;
-}
-
-placed_tile_t *find_most_west(placed_tile_t *origin) {
-  if (origin == NULL) return NULL;
-  if (origin->visited) return NULL;
-
-  origin->visited = true;
-
-  placed_tile_t *most = origin;
-  placed_tile_t *result = NULL;
-
-  result = find_most_west(origin->n);
-  if (result != NULL && result->x < most->x) most = result;
-
-  result = find_most_west(origin->e);
-  if (result != NULL && result->x < most->x) most = result;
-
-  result = find_most_west(origin->s);
-  if (result != NULL && result->x < most->x) most = result;
-
-  result = find_most_west(origin->w);
-  if (result != NULL && result->x < most->x) most = result;
-
-  origin->visited = false;
-  return most;
-}
+find_most(north, result->y > most->y);
+find_most(south, result->y < most->y);
+find_most(east, result->x > most->x);
+find_most(west, result->x < most->x);
 
 placed_tile_t *find_placed_tile(placed_tile_t *origin, int x, int y) {
   if (origin == NULL) return NULL;
