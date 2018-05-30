@@ -182,7 +182,7 @@ char corner_to_char(corner_t corner) {
     case BLUE: return 'B';
     case PURPLE: return 'P';
   }
-  return ' ';
+  return '?';
 }
 
 void print_placed_tiles_populate_display(placed_tile_t* origin, char* display, int rows, int cols, int minX, int maxY) {
