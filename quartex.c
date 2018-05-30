@@ -144,6 +144,9 @@ placed_tile_t* place_tile(placed_tile_t* origin, dir_t dir, tile_t* tile, corner
       break;
   }
 
+  // TODO: find all of the other potentially boarding pieces based on grid x, y locations
+  // and set their directionals to the newly added piece.
+
   return new_placed_tile;
 }
 
