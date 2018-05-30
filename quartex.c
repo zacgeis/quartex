@@ -34,9 +34,12 @@ struct tile_t {
 typedef struct placed_tile_t placed_tile_t;
 struct placed_tile_t {
   int x, y;
-  tile_t *tile;
-  corner_t *config;
-  placed_tile_t *n, *e, *s, *w;
+  tile_t* tile;
+  corner_t* config;
+  placed_tile_t* n;
+  placed_tile_t* e;
+  placed_tile_t* s;
+  placed_tile_t* w;
 
   // Meta
   bool marked_for_deletion;
@@ -47,43 +50,42 @@ typedef struct game_t game_t;
 struct game_t {
   int red_tokens, yellow_tokens, purple_tokens, blue_tokens;
   int tiles_remaining;
-  tile_t **tile_bag;
+  tile_t** tile_bag;
   int player_count;
   int hand_count[hand_limit];
   tile_t hands[player_limit][hand_limit];
-  placed_tile_t *origin; // TODO: set this up correctly (see tests)
+  placed_tile_t* origin; // TODO: set this up correctly (see tests)
 };
 
-// TODO: convert this to use function pointers
-#define find_most(dir, comp) \
-  placed_tile_t *find_most_##dir(placed_tile_t *origin) {\
+#define define_find_most(dir, comp) \
+  placed_tile_t* find_most_##dir(placed_tile_t* origin) {\
     if (origin == NULL) return NULL;\
     if (origin->visited) return NULL;\
     origin->visited = true;\
-    placed_tile_t *most = origin;\
-    placed_tile_t *result = NULL;\
-    result = find_most_##dir(origin->n);\
-    if (result != NULL && comp) most = result;\
-    result = find_most_##dir(origin->e);\
-    if (result != NULL && comp) most = result;\
-    result = find_most_##dir(origin->s);\
-    if (result != NULL && comp) most = result;\
-    result = find_most_##dir(origin->w);\
-    if (result != NULL && comp) most = result;\
+    placed_tile_t* b = origin;\
+    placed_tile_t* a = NULL;\
+    a = find_most_##dir(origin->n);\
+    if (a != NULL && comp) b = a;\
+    a = find_most_##dir(origin->e);\
+    if (a != NULL && comp) b = a;\
+    a = find_most_##dir(origin->s);\
+    if (a != NULL && comp) b = a;\
+    a = find_most_##dir(origin->w);\
+    if (a != NULL && comp) b = a;\
     origin->visited = false;\
-    return most;\
+    return b;\
   }
 
-find_most(north, result->y > most->y);
-find_most(south, result->y < most->y);
-find_most(east, result->x > most->x);
-find_most(west, result->x < most->x);
+define_find_most(north, a->y > b->y);
+define_find_most(south, a->y < b->y);
+define_find_most(east, a->x > b->x);
+define_find_most(west, a->x < b->x);
 
-placed_tile_t *find_placed_tile(placed_tile_t *origin, int x, int y) {
+placed_tile_t* find_placed_tile(placed_tile_t* origin, int x, int y) {
   if (origin == NULL) return NULL;
   if (origin->visited) return NULL;
 
-  placed_tile_t *result = NULL;
+  placed_tile_t* result = NULL;
 
   origin->visited = true;
   if (origin->x == x && origin->y == y) {
@@ -99,7 +101,7 @@ placed_tile_t *find_placed_tile(placed_tile_t *origin, int x, int y) {
   return result;
 }
 
-placed_tile_t *place_tile(placed_tile_t *origin, dir_t dir, tile_t *tile, corner_t *config) {
+placed_tile_t* place_tile(placed_tile_t* origin, dir_t dir, tile_t* tile, corner_t* config) {
   int x = origin->x;
   int y = origin->y;
 
@@ -110,7 +112,7 @@ placed_tile_t *place_tile(placed_tile_t *origin, dir_t dir, tile_t *tile, corner
     case W: x -= 1; break;
   }
 
-  placed_tile_t *new_placed_tile = malloc(sizeof(placed_tile_t));
+  placed_tile_t* new_placed_tile = malloc(sizeof(placed_tile_t));
 
   new_placed_tile->x = x;
   new_placed_tile->y = y;
@@ -145,7 +147,7 @@ placed_tile_t *place_tile(placed_tile_t *origin, dir_t dir, tile_t *tile, corner
   return new_placed_tile;
 }
 
-void free_placed_tiles(placed_tile_t *origin) {
+void free_placed_tiles(placed_tile_t* origin) {
   if (origin != NULL && !origin->marked_for_deletion) {
     origin->marked_for_deletion = true;
     free_placed_tiles(origin->n);
@@ -156,8 +158,8 @@ void free_placed_tiles(placed_tile_t *origin) {
   }
 }
 
-placed_tile_t *origin_tile(tile_t *tile, corner_t *config) {
-  placed_tile_t *origin = malloc(sizeof(placed_tile_t));
+placed_tile_t* origin_tile(tile_t* tile, corner_t* config) {
+  placed_tile_t* origin = malloc(sizeof(placed_tile_t));
 
   origin->x = 0;
   origin->y = 0;
@@ -173,18 +175,84 @@ placed_tile_t *origin_tile(tile_t *tile, corner_t *config) {
   return origin;
 }
 
-void print_tile(tile_t *tile) {
-  corner_t *base = tile->configs[0];
+char corner_to_char(corner_t corner) {
+  switch (corner) {
+    case RED: return 'R';
+    case YELLOW: return 'Y';
+    case BLUE: return 'B';
+    case PURPLE: return 'P';
+  }
+  return ' ';
+}
+
+void print_placed_tiles_populate_display(placed_tile_t* origin, char* display, int rows, int cols, int minX, int maxY) {
+  if (origin == NULL) return;
+  if (origin->visited) return;
+
+  int tr1 = ((maxY - origin->y) * 2) * cols;
+  int tr2 = tr1 + cols;
+  int tc1 = (origin->x - minX) * 2;
+  int tc2 = tc1 + 1;
+
+  display[tr1 + tc1] = corner_to_char(origin->config[0]);
+  display[tr1 + tc2] = corner_to_char(origin->config[1]);
+  display[tr2 + tc2] = corner_to_char(origin->config[2]);
+  display[tr2 + tc1] = corner_to_char(origin->config[3]);
+
+  origin->visited = true;
+  print_placed_tiles_populate_display(origin->n, display, rows, cols, minX, maxY);
+  print_placed_tiles_populate_display(origin->e, display, rows, cols, minX, maxY);
+  print_placed_tiles_populate_display(origin->s, display, rows, cols, minX, maxY);
+  print_placed_tiles_populate_display(origin->w, display, rows, cols, minX, maxY);
+  origin->visited = false;
+}
+
+void print_placed_tiles(placed_tile_t* origin) {
+  placed_tile_t* north = find_most_north(origin);
+  placed_tile_t* east = find_most_east(origin);
+  placed_tile_t* south = find_most_south(origin);
+  placed_tile_t* west = find_most_west(origin);
+
+  int maxY = north->y;
+  int minY = south->y;
+  int maxX = east->x;
+  int minX = west->x;
+
+  int cols = (maxX - minX + 1) * 2;
+  int rows = (maxY - minY + 1) * 2;
+
+  char* display = malloc(sizeof(char) * cols * rows);
+
+  for (int r = 0; r < rows; r++) {
+    for (int c = 0; c < cols; c++) {
+      display[(r * cols) + c] = '.';
+    }
+  }
+
+  print_placed_tiles_populate_display(origin, display, rows, cols, minX, maxY);
+
+  for (int r = 0; r < rows; r++) {
+    for (int c = 0; c < cols; c++) {
+      printf("%c ", display[(r * cols) + c]);
+    }
+    printf("\n");
+  }
+
+  free(display);
+}
+
+void print_tile(tile_t* tile) {
+  corner_t* base = tile->configs[0];
   printf("%i%i\n%i%i\n\n", base[0], base[1], base[2], base[3]);
 }
 
-void print_tiles(tile_t **tiles, int count) {
+void print_tiles(tile_t** tiles, int count) {
   for (int i = 0; i < count; i++) {
     print_tile(tiles[i]);
   }
 }
 
-void rotate_corners(corner_t *corners) {
+void rotate_corners(corner_t* corners) {
   corner_t temp = corners[3];
   corners[3] = corners[2];
   corners[2] = corners[1];
@@ -192,7 +260,7 @@ void rotate_corners(corner_t *corners) {
   corners[0] = temp;
 }
 
-void flip_corners(corner_t *corners) {
+void flip_corners(corner_t* corners) {
   corner_t temp1 = corners[0];
   corner_t temp2 = corners[3];
   corners[0] = corners[1];
@@ -201,7 +269,7 @@ void flip_corners(corner_t *corners) {
   corners[2] = temp2;
 }
 
-bool corners_equal(corner_t *a, corner_t *b) {
+bool corners_equal(corner_t* a, corner_t* b) {
   for (int i = 0; i < corner_count; i++) {
     if (a[i] != b[i]) return false;
   }
@@ -218,19 +286,19 @@ corner_t int_to_corner(int i) {
   return 0;
 }
 
-void free_shallow_tiles(tile_t **tiles) {
+void free_shallow_tiles(tile_t** tiles) {
   free(tiles);
 }
 
-void free_tiles(tile_t **tiles) {
+void free_tiles(tile_t** tiles) {
   for (int i = 0; i < tile_count; i++) {
     free(tiles[i]);
   }
   free(tiles);
 }
 
-tile_t **generate_tiles() {
-  tile_t **tiles = malloc(sizeof(tile_t *) * tile_count);
+tile_t** generate_tiles() {
+  tile_t** tiles = malloc(sizeof(tile_t* )*  tile_count);
 
   int i = 0;
   corner_t a_corner, b_corner, c_corner, d_corner;
@@ -243,7 +311,7 @@ tile_t **generate_tiles() {
         for (int d = 0; d < corner_count; d++) {
           d_corner = int_to_corner(d);
 
-          tile_t *tile = malloc(sizeof(tile_t));
+          tile_t* tile = malloc(sizeof(tile_t));
           tile->id = i;
 
           for (int x = 0; x < config_count; x++) {
@@ -301,25 +369,25 @@ tile_t **generate_tiles() {
   return tiles;
 }
 
-tile_t **shallow_copy_tiles(tile_t **tiles) {
-  tile_t **copy = malloc(sizeof(tile_t *) * tile_count);
+tile_t** shallow_copy_tiles(tile_t** tiles) {
+  tile_t** copy = malloc(sizeof(tile_t* )*  tile_count);
   for (int i = 0; i < tile_count; i++) {
     copy[i] = tiles[i];
   }
   return copy;
 }
 
-void shuffle_tiles(tile_t **tiles) {
+void shuffle_tiles(tile_t** tiles) {
   for (int i = tile_count - 1; i >= 0; i--) {
     int j = rand() % (i + 1);
-    tile_t *temp = tiles[i];
+    tile_t* temp = tiles[i];
     tiles[i] = tiles[j];
     tiles[j] = temp;
   }
 }
 
-void simulate_game(tile_t **original) {
-  tile_t **tiles = shallow_copy_tiles(original);
+void simulate_game(tile_t** original) {
+  tile_t** tiles = shallow_copy_tiles(original);
   shuffle_tiles(tiles);
 
   game_t game = {
@@ -342,25 +410,28 @@ void simulate_game(tile_t **original) {
   free_shallow_tiles(tiles);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   srand(time(NULL));
 
 #ifdef test
 
   printf("Running tests...\n");
 
-  tile_t **tiles = generate_tiles();
-  tile_t **copy = shallow_copy_tiles(tiles);
+  tile_t** tiles = generate_tiles();
+  tile_t** copy = shallow_copy_tiles(tiles);
 
   shuffle_tiles(copy);
 
-  print_tiles(copy, tile_count);
+  // print_tiles(copy, tile_count);
 
-  placed_tile_t *origin = origin_tile(copy[0], copy[0]->configs[0]);
-  placed_tile_t *pt1 = place_tile(origin, N, copy[1], copy[1]->configs[0]);
-  placed_tile_t *pt2 = place_tile(origin, E, copy[2], copy[2]->configs[0]);
-  placed_tile_t *pt3 = place_tile(origin, S, copy[3], copy[3]->configs[0]);
-  placed_tile_t *pt4 = place_tile(origin, W, copy[4], copy[4]->configs[0]);
+  placed_tile_t* origin = origin_tile(copy[0], copy[0]->configs[0]);
+  placed_tile_t* pt1 = place_tile(origin, N, copy[1], copy[1]->configs[0]);
+  placed_tile_t* pt2 = place_tile(origin, E, copy[2], copy[2]->configs[0]);
+  placed_tile_t* pt3 = place_tile(origin, S, copy[3], copy[3]->configs[0]);
+  placed_tile_t* pt4 = place_tile(origin, W, copy[4], copy[4]->configs[0]);
+  placed_tile_t* pt5 = place_tile(pt2, E, copy[5], copy[5]->configs[0]);
+  placed_tile_t* pt6 = place_tile(pt5, S, copy[6], copy[6]->configs[0]);
+  placed_tile_t* pt7 = place_tile(pt6, S, copy[7], copy[7]->configs[0]);
 
   assert(origin->x == 0);
   assert(origin->y == 0);
@@ -369,25 +440,39 @@ int main(int argc, char **argv) {
   assert(pt1->s == origin);
   assert(origin->n == pt1);
 
-  placed_tile_t *result = find_placed_tile(origin, 0, 1);
+  placed_tile_t* result = find_placed_tile(origin, 0, 1);
   assert(result->x == 0);
   assert(result->y == 1);
 
-  placed_tile_t *most_north = find_most_north(origin);
+  placed_tile_t* most_north = find_most_north(origin);
   assert(most_north->x == 0);
   assert(most_north->y == 1);
 
-  placed_tile_t *most_south = find_most_south(origin);
-  assert(most_south->x == 0);
-  assert(most_south->y == -1);
+  placed_tile_t* most_south = find_most_south(origin);
+  assert(most_south->x == 2);
+  assert(most_south->y == -2);
 
-  placed_tile_t *most_east = find_most_east(origin);
-  assert(most_east->x == 1);
+  placed_tile_t* most_east = find_most_east(origin);
+  assert(most_east->x == 2);
   assert(most_east->y == 0);
 
-  placed_tile_t *most_west = find_most_west(origin);
+  placed_tile_t* most_west = find_most_west(origin);
   assert(most_west->x == -1);
   assert(most_west->y == 0);
+
+
+  /*
+    Looks like this:
+    . . Y P . . . .
+    . . B P . . . .
+    R Y P B Y B R Y
+    B B B B B B Y R
+    . . Y P . . R Y
+    . . P Y . . Y Y
+    . . . . . . R Y
+    . . . . . . Y P
+  */
+  print_placed_tiles(origin);
 
   free_placed_tiles(origin);
   free_shallow_tiles(copy);
@@ -399,7 +484,7 @@ int main(int argc, char **argv) {
 
   printf("Quartex Simulation v0.0\n\n");
 
-  tile_t **tiles = generate_tiles();
+  tile_t** tiles = generate_tiles();
   simulate_game(tiles);
   free_tiles(tiles);
 
