@@ -298,7 +298,7 @@ void free_tiles(tile_t** tiles) {
 }
 
 tile_t** generate_tiles() {
-  tile_t** tiles = malloc(sizeof(tile_t* )*  tile_count);
+  tile_t** tiles = malloc(sizeof(tile_t*) * tile_count);
 
   int i = 0;
   corner_t a_corner, b_corner, c_corner, d_corner;
@@ -370,7 +370,7 @@ tile_t** generate_tiles() {
 }
 
 tile_t** shallow_copy_tiles(tile_t** tiles) {
-  tile_t** copy = malloc(sizeof(tile_t* )*  tile_count);
+  tile_t** copy = malloc(sizeof(tile_t*) * tile_count);
   for (int i = 0; i < tile_count; i++) {
     copy[i] = tiles[i];
   }
@@ -459,7 +459,6 @@ int main(int argc, char** argv) {
   placed_tile_t* most_west = find_most_west(origin);
   assert(most_west->x == -1);
   assert(most_west->y == 0);
-
 
   /*
     Looks like this:
